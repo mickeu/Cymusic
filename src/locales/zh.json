@@ -151,6 +151,12 @@
 		"cancel": "取消",
 		"confirm": "确定",
 		"lyricDelay": "歌词延迟",
+		"backToPlayer": "返回播放器",
+		"decreaseLyricFontSize": "缩小歌词字号",
+		"increaseLyricFontSize": "放大歌词字号",
+		"decreaseLyricDelay": "歌词延迟减少 0.5 秒",
+		"increaseLyricDelay": "歌词延迟增加 0.5 秒",
+		"resetLyricDelay": "重置歌词延迟",
 		"selectArtist": "选择歌手",
 		"error": {
 			"title": "错误",

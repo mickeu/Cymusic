@@ -398,71 +398,95 @@ const PlayerScreenContent = () => {
 							<Lyric onTurnPageClick={handleLyricsToggle} />
 							{/* </Pressable> */}
 						</Animated.View>
-						<View style={styles.container}>
-							<View style={styles.leftItem}>
+						<View style={styles.lyricToolbar}>
+							<TouchableOpacity
+								style={styles.lyricToolbarButton}
+								onPress={handleLyricsToggle}
+								accessibilityRole="button"
+								accessibilityLabel={i18n.t('player.backToPlayer')}
+							>
 								<MaterialCommunityIcons
 									name="tooltip-minus-outline"
 									size={27}
 									color={colors.text}
-									onPress={handleLyricsToggle}
-									style={{ marginBottom: 4 }}
+									accessible={false}
 								/>
-							</View>
-							<View style={styles.centeredItem}>
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={styles.lyricToolbarButton}
+								onPress={handleLyricsFontSizeDecrease}
+								accessibilityRole="button"
+								accessibilityLabel={i18n.t('player.decreaseLyricFontSize')}
+							>
 								<MaterialCommunityIcons
 									name="format-font-size-decrease"
 									size={30}
 									color={colors.text}
-									onPress={handleLyricsFontSizeDecrease}
-									style={{ marginBottom: 4 }}
+									accessible={false}
 								/>
-							</View>
-							<View style={styles.centeredItem}>
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={styles.lyricToolbarButton}
+								onPress={handleLyricsFontSizeIncrease}
+								accessibilityRole="button"
+								accessibilityLabel={i18n.t('player.increaseLyricFontSize')}
+							>
 								<MaterialCommunityIcons
 									name="format-font-size-increase"
 									size={30}
 									color={colors.text}
-									onPress={handleLyricsFontSizeIncrease}
-									style={{ marginBottom: 4 }}
+									accessible={false}
 								/>
-							</View>
-							<View style={styles.rightItem}>
-								<TouchableOpacity
-									style={styles.lyricDelayToggleButton}
-									onPress={toggleLyricDelayControls}
-								>
-									<MaterialCommunityIcons
-										name="timer-outline"
-										size={26}
-										color={showLyricDelayControls ? colors.primary : colors.text}
-									/>
-								</TouchableOpacity>
-							</View>
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={styles.lyricToolbarButton}
+								onPress={toggleLyricDelayControls}
+								accessibilityRole="button"
+								accessibilityLabel={i18n.t('player.lyricDelay')}
+								accessibilityState={{ expanded: showLyricDelayControls }}
+							>
+								<MaterialCommunityIcons
+									name="timer-outline"
+									size={26}
+									color={showLyricDelayControls ? colors.primary : colors.text}
+									accessible={false}
+								/>
+							</TouchableOpacity>
 						</View>
 						{showLyricDelayControls ? (
-							<View style={[styles.container, styles.lyricDelayContainer]}>
-								<View style={styles.leftItem}>
-									<TouchableOpacity
-										style={styles.delayAdjustButton}
-										onPress={handleLyricDelayDecrease}
-									>
-										<Text style={styles.delayAdjustText}>-0.5s</Text>
-									</TouchableOpacity>
-								</View>
-								<View style={styles.centeredItem}>
-									<TouchableOpacity style={styles.delayValueButton} onPress={handleLyricDelayReset}>
-										<Text style={styles.delayLabel}>{i18n.t('player.lyricDelay')}</Text>
-										<Text style={styles.delayValueText}>{formatLyricDelay(lyricDelaySeconds)}</Text>
-									</TouchableOpacity>
-								</View>
-								<View style={styles.rightItem}>
-									<TouchableOpacity
-										style={styles.delayAdjustButton}
-										onPress={handleLyricDelayIncrease}
-									>
-										<Text style={styles.delayAdjustText}>+0.5s</Text>
-									</TouchableOpacity>
-								</View>
+							<View style={styles.lyricDelayContainer}>
+								<TouchableOpacity
+									style={styles.delayAdjustButton}
+									onPress={handleLyricDelayDecrease}
+									accessibilityRole="button"
+									accessibilityLabel={i18n.t('player.decreaseLyricDelay')}
+								>
+									<Text style={styles.delayAdjustText} numberOfLines={1} adjustsFontSizeToFit>
+										-0.5s
+									</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={styles.delayValueButton}
+									onPress={handleLyricDelayReset}
+									accessibilityRole="button"
+									accessibilityLabel={i18n.t('player.resetLyricDelay')}
+									accessibilityValue={{ text: formatLyricDelay(lyricDelaySeconds) }}
+								>
+									<Text style={styles.delayLabel} numberOfLines={1} adjustsFontSizeToFit>
+										{i18n.t('player.lyricDelay')}
+									</Text>
+									<Text style={styles.delayValueText}>{formatLyricDelay(lyricDelaySeconds)}</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={styles.delayAdjustButton}
+									onPress={handleLyricDelayIncrease}
+									accessibilityRole="button"
+									accessibilityLabel={i18n.t('player.increaseLyricDelay')}
+								>
+									<Text style={styles.delayAdjustText} numberOfLines={1} adjustsFontSizeToFit>
+										+0.5s
+									</Text>
+								</TouchableOpacity>
 							</View>
 						) : null}
 					</View>
@@ -756,18 +780,37 @@ const createStyles = (colors: ThemeColors, defaultStyles: ReturnType<typeof useD
 			flex: 1,
 			alignItems: 'flex-end',
 		},
-		lyricDelayContainer: {
-			marginTop: 10,
+		lyricToolbar: {
+			width: '100%',
+			flexDirection: 'row',
+			alignItems: 'center',
+			flexShrink: 0,
 		},
-		lyricDelayToggleButton: {
-			paddingVertical: 8,
-			paddingHorizontal: 12,
+		lyricToolbarButton: {
+			flex: 1,
+			minWidth: 0,
+			minHeight: 44,
+			alignItems: 'center',
+			justifyContent: 'center',
 			borderRadius: 8,
 		},
+		lyricDelayContainer: {
+			width: '100%',
+			flexDirection: 'row',
+			alignItems: 'stretch',
+			flexShrink: 0,
+			columnGap: 8,
+			marginTop: 8,
+		},
 		delayAdjustButton: {
+			flex: 1,
+			minWidth: 0,
+			minHeight: 44,
+			alignItems: 'center',
+			justifyContent: 'center',
 			backgroundColor: colors.overlaySoft,
 			paddingVertical: 8,
-			paddingHorizontal: 12,
+			paddingHorizontal: 8,
 			borderRadius: 8,
 		},
 		delayAdjustText: {
@@ -776,13 +819,15 @@ const createStyles = (colors: ThemeColors, defaultStyles: ReturnType<typeof useD
 			fontWeight: '600',
 		},
 		delayValueButton: {
+			flex: 1.6,
+			minWidth: 0,
+			minHeight: 44,
 			alignItems: 'center',
 			justifyContent: 'center',
 			backgroundColor: colors.overlaySoft,
 			paddingVertical: 8,
-			paddingHorizontal: 12,
+			paddingHorizontal: 8,
 			borderRadius: 8,
-			minWidth: 130,
 		},
 		delayLabel: {
 			...defaultStyles.text,

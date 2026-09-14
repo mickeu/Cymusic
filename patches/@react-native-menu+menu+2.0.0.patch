@@ -12,3 +12,172 @@ diff --git a/node_modules/@react-native-menu/menu/ios/Shared/RCTMenuItem.swift b
                  self.image = self.image?.withTintColor(RCTConvert.uiColor(imageColor), renderingMode: .alwaysOriginal)
              }
          }
+diff --git a/node_modules/@react-native-menu/menu/src/index.tsx b/node_modules/@react-native-menu/menu/src/index.tsx
+index a536298..cfd4b61 100644
+--- a/node_modules/@react-native-menu/menu/src/index.tsx
++++ b/node_modules/@react-native-menu/menu/src/index.tsx
+@@ -1,5 +1,5 @@
+ import { forwardRef, useMemo } from "react";
+-import { processColor } from "react-native";
++import { Platform, processColor, useColorScheme } from "react-native";
+ 
+ import UIMenuView from "./UIMenuView";
+ import type {
+@@ -11,12 +11,20 @@ import type {
+ } from "./types";
+ import { objectHash } from "./utils";
+ 
+-function processAction(action: MenuAction): ProcessedMenuAction {
++function processAction(action: MenuAction, isDark: boolean): ProcessedMenuAction {
++	let imageColor = action.imageColor;
++	// Send an actual color across Fabric instead of relying on its zero default
++	// or UIKit's implicit symbol tint. Keep custom colors and Android unchanged.
++	if (Platform.OS === "ios" && action.image && imageColor == null) {
++		imageColor = action.attributes?.destructive
++			? (isDark ? "#ff453a" : "#ff3b30")
++			: (isDark ? "#ffffff" : "#000000");
++	}
+ 	return {
+ 		...action,
+-		imageColor: processColor(action.imageColor),
++		imageColor: processColor(imageColor),
+ 		titleColor: processColor(action.titleColor),
+-		subactions: action.subactions?.map((subAction) => processAction(subAction)),
++		subactions: action.subactions?.map((subAction) => processAction(subAction, isDark)),
+ 	};
+ }
+ 
+@@ -24,8 +32,11 @@ const defaultHitslop = { top: 0, left: 0, bottom: 0, right: 0 };
+ 
+ const MenuView = forwardRef<MenuComponentRef, MenuComponentProps>(
+ 	({ actions, hitSlop = defaultHitslop, ...props }, ref) => {
++		const colorScheme = useColorScheme();
++		const isDark = props.themeVariant === "dark" ||
++			(props.themeVariant !== "light" && colorScheme === "dark");
+ 		const processedActions = actions.map<ProcessedMenuAction>((action) =>
+-			processAction(action),
++			processAction(action, isDark),
+ 		);
+ 		const hash = useMemo(() => {
+ 			return objectHash(processedActions);
+diff --git a/node_modules/@react-native-menu/menu/lib/module/index.js b/node_modules/@react-native-menu/menu/lib/module/index.js
+index 57ae111..d90b9e9 100644
+--- a/node_modules/@react-native-menu/menu/lib/module/index.js
++++ b/node_modules/@react-native-menu/menu/lib/module/index.js
+@@ -1,16 +1,20 @@
+-"use strict";
+-
+ import { forwardRef, useMemo } from "react";
+-import { processColor } from "react-native";
++import { Platform, processColor, useColorScheme } from "react-native";
+ import UIMenuView from "./UIMenuView";
+ import { objectHash } from "./utils";
+ import { jsx as _jsx } from "react/jsx-runtime";
+-function processAction(action) {
++function processAction(action, isDark) {
++  let imageColor = action.imageColor;
++  // Send an actual color across Fabric instead of relying on its zero default
++  // or UIKit's implicit symbol tint. Keep custom colors and Android unchanged.
++  if (Platform.OS === "ios" && action.image && imageColor == null) {
++    imageColor = action.attributes?.destructive ? isDark ? "#ff453a" : "#ff3b30" : isDark ? "#ffffff" : "#000000";
++  }
+   return {
+     ...action,
+-    imageColor: processColor(action.imageColor),
++    imageColor: processColor(imageColor),
+     titleColor: processColor(action.titleColor),
+-    subactions: action.subactions?.map(subAction => processAction(subAction))
++    subactions: action.subactions?.map(subAction => processAction(subAction, isDark))
+   };
+ }
+ const defaultHitslop = {
+@@ -19,12 +23,14 @@ const defaultHitslop = {
+   bottom: 0,
+   right: 0
+ };
+-const MenuView = /*#__PURE__*/forwardRef(({
++const MenuView = forwardRef(({
+   actions,
+   hitSlop = defaultHitslop,
+   ...props
+ }, ref) => {
+-  const processedActions = actions.map(action => processAction(action));
++  const colorScheme = useColorScheme();
++  const isDark = props.themeVariant === "dark" || props.themeVariant !== "light" && colorScheme === "dark";
++  const processedActions = actions.map(action => processAction(action, isDark));
+   const hash = useMemo(() => {
+     return objectHash(processedActions);
+   }, [processedActions]);
+@@ -37,4 +43,4 @@ const MenuView = /*#__PURE__*/forwardRef(({
+   });
+ });
+ export { MenuView };
+-//# sourceMappingURL=index.js.map
+\ No newline at end of file
++//# sourceMappingURL=index.js.map
+diff --git a/node_modules/@react-native-menu/menu/lib/module/index.js.map b/node_modules/@react-native-menu/menu/lib/module/index.js.map
+index 98ed24f..41f62c9 100644
+--- a/node_modules/@react-native-menu/menu/lib/module/index.js.map
++++ b/node_modules/@react-native-menu/menu/lib/module/index.js.map
+@@ -1 +1 @@
+-{"version":3,"names":["forwardRef","useMemo","processColor","UIMenuView","objectHash","jsx","_jsx","processAction","action","imageColor","titleColor","subactions","map","subAction","defaultHitslop","top","left","bottom","right","MenuView","actions","hitSlop","props","ref","processedActions","hash","actionsHash"],"sourceRoot":"../../src","sources":["index.tsx"],"mappings":";;AAAA,SAASA,UAAU,EAAEC,OAAO,QAAQ,OAAO;AAC3C,SAASC,YAAY,QAAQ,cAAc;AAE3C,OAAOC,UAAU,MAAM,cAAc;AAQrC,SAASC,UAAU,QAAQ,SAAS;AAAC,SAAAC,GAAA,IAAAC,IAAA;AAErC,SAASC,aAAaA,CAACC,MAAkB,EAAuB;EAC/D,OAAO;IACN,GAAGA,MAAM;IACTC,UAAU,EAAEP,YAAY,CAACM,MAAM,CAACC,UAAU,CAAC;IAC3CC,UAAU,EAAER,YAAY,CAACM,MAAM,CAACE,UAAU,CAAC;IAC3CC,UAAU,EAAEH,MAAM,CAACG,UAAU,EAAEC,GAAG,CAAEC,SAAS,IAAKN,aAAa,CAACM,SAAS,CAAC;EAC3E,CAAC;AACF;AAEA,MAAMC,cAAc,GAAG;EAAEC,GAAG,EAAE,CAAC;EAAEC,IAAI,EAAE,CAAC;EAAEC,MAAM,EAAE,CAAC;EAAEC,KAAK,EAAE;AAAE,CAAC;AAE/D,MAAMC,QAAQ,gBAAGnB,UAAU,CAC1B,CAAC;EAAEoB,OAAO;EAAEC,OAAO,GAAGP,cAAc;EAAE,GAAGQ;AAAM,CAAC,EAAEC,GAAG,KAAK;EACzD,MAAMC,gBAAgB,GAAGJ,OAAO,CAACR,GAAG,CAAuBJ,MAAM,IAChED,aAAa,CAACC,MAAM,CACrB,CAAC;EACD,MAAMiB,IAAI,GAAGxB,OAAO,CAAC,MAAM;IAC1B,OAAOG,UAAU,CAACoB,gBAAgB,CAAC;EACpC,CAAC,EAAE,CAACA,gBAAgB,CAAC,CAAC;EAEtB,oBACClB,IAAA,CAACH,UAAU;IAAA,GACNmB,KAAK;IACTD,OAAO,EAAEA,OAAQ;IACjBD,OAAO,EAAEI,gBAAiB;IAC1BE,WAAW,EAAED,IAAK;IAClBF,GAAG,EAAEA;EAAI,CACT,CAAC;AAEJ,CACD,CAAC;AAED,SAASJ,QAAQ","ignoreList":[]}
++{"version":3,"names":["forwardRef","useMemo","Platform","processColor","useColorScheme","UIMenuView","objectHash","jsx","_jsx","processAction","action","isDark","imageColor","OS","image","attributes","destructive","titleColor","subactions","map","subAction","defaultHitslop","top","left","bottom","right","MenuView","actions","hitSlop","props","ref","colorScheme","themeVariant","processedActions","hash","actionsHash"],"sources":["../../src/index.tsx"],"sourcesContent":["import { forwardRef, useMemo } from \"react\";\nimport { Platform, processColor, useColorScheme } from \"react-native\";\n\nimport UIMenuView from \"./UIMenuView\";\nimport type {\n\tMenuComponentProps,\n\tMenuAction,\n\tProcessedMenuAction,\n\tNativeActionEvent,\n\tMenuComponentRef,\n} from \"./types\";\nimport { objectHash } from \"./utils\";\n\nfunction processAction(action: MenuAction, isDark: boolean): ProcessedMenuAction {\n\tlet imageColor = action.imageColor;\n\t// Send an actual color across Fabric instead of relying on its zero default\n\t// or UIKit's implicit symbol tint. Keep custom colors and Android unchanged.\n\tif (Platform.OS === \"ios\" && action.image && imageColor == null) {\n\t\timageColor = action.attributes?.destructive\n\t\t\t? (isDark ? \"#ff453a\" : \"#ff3b30\")\n\t\t\t: (isDark ? \"#ffffff\" : \"#000000\");\n\t}\n\treturn {\n\t\t...action,\n\t\timageColor: processColor(imageColor),\n\t\ttitleColor: processColor(action.titleColor),\n\t\tsubactions: action.subactions?.map((subAction) => processAction(subAction, isDark)),\n\t};\n}\n\nconst defaultHitslop = { top: 0, left: 0, bottom: 0, right: 0 };\n\nconst MenuView = forwardRef<MenuComponentRef, MenuComponentProps>(\n\t({ actions, hitSlop = defaultHitslop, ...props }, ref) => {\n\t\tconst colorScheme = useColorScheme();\n\t\tconst isDark = props.themeVariant === \"dark\" ||\n\t\t\t(props.themeVariant !== \"light\" && colorScheme === \"dark\");\n\t\tconst processedActions = actions.map<ProcessedMenuAction>((action) =>\n\t\t\tprocessAction(action, isDark),\n\t\t);\n\t\tconst hash = useMemo(() => {\n\t\t\treturn objectHash(processedActions);\n\t\t}, [processedActions]);\n\n\t\treturn (\n\t\t\t<UIMenuView\n\t\t\t\t{...props}\n\t\t\t\thitSlop={hitSlop}\n\t\t\t\tactions={processedActions}\n\t\t\t\tactionsHash={hash}\n\t\t\t\tref={ref}\n\t\t\t/>\n\t\t);\n\t},\n);\n\nexport { MenuView };\nexport type {\n\tMenuComponentProps,\n\tMenuComponentRef,\n\tMenuAction,\n\tNativeActionEvent,\n};\n"],"mappings":"AAAA,SAASA,UAAU,EAAEC,OAAO,QAAQ,OAAO;AAC3C,SAASC,QAAQ,EAAEC,YAAY,EAAEC,cAAc,QAAQ,cAAc;AAErE,OAAOC,UAAU,MAAM,cAAc;AAQrC,SAASC,UAAU,QAAQ,SAAS;AAAC,SAAAC,GAAA,IAAAC,IAAA;AAErC,SAASC,aAAaA,CAACC,MAAkB,EAAEC,MAAe,EAAuB;EAChF,IAAIC,UAAU,GAAGF,MAAM,CAACE,UAAU;EAClC;EACA;EACA,IAAIV,QAAQ,CAACW,EAAE,KAAK,KAAK,IAAIH,MAAM,CAACI,KAAK,IAAIF,UAAU,IAAI,IAAI,EAAE;IAChEA,UAAU,GAAGF,MAAM,CAACK,UAAU,EAAEC,WAAW,GACvCL,MAAM,GAAG,SAAS,GAAG,SAAS,GAC9BA,MAAM,GAAG,SAAS,GAAG,SAAU;EACpC;EACA,OAAO;IACN,GAAGD,MAAM;IACTE,UAAU,EAAET,YAAY,CAACS,UAAU,CAAC;IACpCK,UAAU,EAAEd,YAAY,CAACO,MAAM,CAACO,UAAU,CAAC;IAC3CC,UAAU,EAAER,MAAM,CAACQ,UAAU,EAAEC,GAAG,CAAEC,SAAS,IAAKX,aAAa,CAACW,SAAS,EAAET,MAAM,CAAC;EACnF,CAAC;AACF;AAEA,MAAMU,cAAc,GAAG;EAAEC,GAAG,EAAE,CAAC;EAAEC,IAAI,EAAE,CAAC;EAAEC,MAAM,EAAE,CAAC;EAAEC,KAAK,EAAE;AAAE,CAAC;AAE/D,MAAMC,QAAQ,GAAG1B,UAAU,CAC1B,CAAC;EAAE2B,OAAO;EAAEC,OAAO,GAAGP,cAAc;EAAE,GAAGQ;AAAM,CAAC,EAAEC,GAAG,KAAK;EACzD,MAAMC,WAAW,GAAG3B,cAAc,CAAC,CAAC;EACpC,MAAMO,MAAM,GAAGkB,KAAK,CAACG,YAAY,KAAK,MAAM,IAC1CH,KAAK,CAACG,YAAY,KAAK,OAAO,IAAID,WAAW,KAAK,MAAO;EAC3D,MAAME,gBAAgB,GAAGN,OAAO,CAACR,GAAG,CAAuBT,MAAM,IAChED,aAAa,CAACC,MAAM,EAAEC,MAAM,CAC7B,CAAC;EACD,MAAMuB,IAAI,GAAGjC,OAAO,CAAC,MAAM;IAC1B,OAAOK,UAAU,CAAC2B,gBAAgB,CAAC;EACpC,CAAC,EAAE,CAACA,gBAAgB,CAAC,CAAC;EAEtB,oBACCzB,IAAA,CAACH,UAAU;IAAA,GACNwB,KAAK;IACTD,OAAO,EAAEA,OAAQ;IACjBD,OAAO,EAAEM,gBAAiB;IAC1BE,WAAW,EAAED,IAAK;IAClBJ,GAAG,EAAEA;EAAI,CACT,CAAC;AAEJ,CACD,CAAC;AAED,SAASJ,QAAQ","ignoreList":[]}
+\ No newline at end of file
+diff --git a/node_modules/@react-native-menu/menu/lib/commonjs/index.js b/node_modules/@react-native-menu/menu/lib/commonjs/index.js
+index 7c4e9fb..71fa797 100644
+--- a/node_modules/@react-native-menu/menu/lib/commonjs/index.js
++++ b/node_modules/@react-native-menu/menu/lib/commonjs/index.js
+@@ -10,12 +10,18 @@ var _UIMenuView = _interopRequireDefault(require("./UIMenuView"));
+ var _utils = require("./utils");
+ var _jsxRuntime = require("react/jsx-runtime");
+ function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+-function processAction(action) {
++function processAction(action, isDark) {
++  let imageColor = action.imageColor;
++  // Send an actual color across Fabric instead of relying on its zero default
++  // or UIKit's implicit symbol tint. Keep custom colors and Android unchanged.
++  if (_reactNative.Platform.OS === "ios" && action.image && imageColor == null) {
++    imageColor = action.attributes?.destructive ? isDark ? "#ff453a" : "#ff3b30" : isDark ? "#ffffff" : "#000000";
++  }
+   return {
+     ...action,
+-    imageColor: (0, _reactNative.processColor)(action.imageColor),
++    imageColor: (0, _reactNative.processColor)(imageColor),
+     titleColor: (0, _reactNative.processColor)(action.titleColor),
+-    subactions: action.subactions?.map(subAction => processAction(subAction))
++    subactions: action.subactions?.map(subAction => processAction(subAction, isDark))
+   };
+ }
+ const defaultHitslop = {
+@@ -24,12 +30,14 @@ const defaultHitslop = {
+   bottom: 0,
+   right: 0
+ };
+-const MenuView = exports.MenuView = /*#__PURE__*/(0, _react.forwardRef)(({
++const MenuView = exports.MenuView = (0, _react.forwardRef)(({
+   actions,
+   hitSlop = defaultHitslop,
+   ...props
+ }, ref) => {
+-  const processedActions = actions.map(action => processAction(action));
++  const colorScheme = (0, _reactNative.useColorScheme)();
++  const isDark = props.themeVariant === "dark" || props.themeVariant !== "light" && colorScheme === "dark";
++  const processedActions = actions.map(action => processAction(action, isDark));
+   const hash = (0, _react.useMemo)(() => {
+     return (0, _utils.objectHash)(processedActions);
+   }, [processedActions]);
+@@ -41,4 +49,4 @@ const MenuView = exports.MenuView = /*#__PURE__*/(0, _react.forwardRef)(({
+     ref: ref
+   });
+ });
+-//# sourceMappingURL=index.js.map
+\ No newline at end of file
++//# sourceMappingURL=index.js.map
+diff --git a/node_modules/@react-native-menu/menu/lib/commonjs/index.js.map b/node_modules/@react-native-menu/menu/lib/commonjs/index.js.map
+index 1a31393..829bbdf 100644
+--- a/node_modules/@react-native-menu/menu/lib/commonjs/index.js.map
++++ b/node_modules/@react-native-menu/menu/lib/commonjs/index.js.map
+@@ -1 +1 @@
+-{"version":3,"names":["_react","require","_reactNative","_UIMenuView","_interopRequireDefault","_utils","_jsxRuntime","e","__esModule","default","processAction","action","imageColor","processColor","titleColor","subactions","map","subAction","defaultHitslop","top","left","bottom","right","MenuView","exports","forwardRef","actions","hitSlop","props","ref","processedActions","hash","useMemo","objectHash","jsx","actionsHash"],"sourceRoot":"../../src","sources":["index.tsx"],"mappings":";;;;;;AAAA,IAAAA,MAAA,GAAAC,OAAA;AACA,IAAAC,YAAA,GAAAD,OAAA;AAEA,IAAAE,WAAA,GAAAC,sBAAA,CAAAH,OAAA;AAQA,IAAAI,MAAA,GAAAJ,OAAA;AAAqC,IAAAK,WAAA,GAAAL,OAAA;AAAA,SAAAG,uBAAAG,CAAA,WAAAA,CAAA,IAAAA,CAAA,CAAAC,UAAA,GAAAD,CAAA,KAAAE,OAAA,EAAAF,CAAA;AAErC,SAASG,aAAaA,CAACC,MAAkB,EAAuB;EAC/D,OAAO;IACN,GAAGA,MAAM;IACTC,UAAU,EAAE,IAAAC,yBAAY,EAACF,MAAM,CAACC,UAAU,CAAC;IAC3CE,UAAU,EAAE,IAAAD,yBAAY,EAACF,MAAM,CAACG,UAAU,CAAC;IAC3CC,UAAU,EAAEJ,MAAM,CAACI,UAAU,EAAEC,GAAG,CAAEC,SAAS,IAAKP,aAAa,CAACO,SAAS,CAAC;EAC3E,CAAC;AACF;AAEA,MAAMC,cAAc,GAAG;EAAEC,GAAG,EAAE,CAAC;EAAEC,IAAI,EAAE,CAAC;EAAEC,MAAM,EAAE,CAAC;EAAEC,KAAK,EAAE;AAAE,CAAC;AAE/D,MAAMC,QAAQ,GAAAC,OAAA,CAAAD,QAAA,gBAAG,IAAAE,iBAAU,EAC1B,CAAC;EAAEC,OAAO;EAAEC,OAAO,GAAGT,cAAc;EAAE,GAAGU;AAAM,CAAC,EAAEC,GAAG,KAAK;EACzD,MAAMC,gBAAgB,GAAGJ,OAAO,CAACV,GAAG,CAAuBL,MAAM,IAChED,aAAa,CAACC,MAAM,CACrB,CAAC;EACD,MAAMoB,IAAI,GAAG,IAAAC,cAAO,EAAC,MAAM;IAC1B,OAAO,IAAAC,iBAAU,EAACH,gBAAgB,CAAC;EACpC,CAAC,EAAE,CAACA,gBAAgB,CAAC,CAAC;EAEtB,oBACC,IAAAxB,WAAA,CAAA4B,GAAA,EAAC/B,WAAA,CAAAM,OAAU;IAAA,GACNmB,KAAK;IACTD,OAAO,EAAEA,OAAQ;IACjBD,OAAO,EAAEI,gBAAiB;IAC1BK,WAAW,EAAEJ,IAAK;IAClBF,GAAG,EAAEA;EAAI,CACT,CAAC;AAEJ,CACD,CAAC","ignoreList":[]}
++{"version":3,"names":["_react","require","_reactNative","_UIMenuView","_interopRequireDefault","_utils","_jsxRuntime","e","__esModule","default","processAction","action","isDark","imageColor","Platform","OS","image","attributes","destructive","processColor","titleColor","subactions","map","subAction","defaultHitslop","top","left","bottom","right","MenuView","exports","forwardRef","actions","hitSlop","props","ref","colorScheme","useColorScheme","themeVariant","processedActions","hash","useMemo","objectHash","jsx","actionsHash"],"sources":["../../src/index.tsx"],"sourcesContent":["import { forwardRef, useMemo } from \"react\";\nimport { Platform, processColor, useColorScheme } from \"react-native\";\n\nimport UIMenuView from \"./UIMenuView\";\nimport type {\n\tMenuComponentProps,\n\tMenuAction,\n\tProcessedMenuAction,\n\tNativeActionEvent,\n\tMenuComponentRef,\n} from \"./types\";\nimport { objectHash } from \"./utils\";\n\nfunction processAction(action: MenuAction, isDark: boolean): ProcessedMenuAction {\n\tlet imageColor = action.imageColor;\n\t// Send an actual color across Fabric instead of relying on its zero default\n\t// or UIKit's implicit symbol tint. Keep custom colors and Android unchanged.\n\tif (Platform.OS === \"ios\" && action.image && imageColor == null) {\n\t\timageColor = action.attributes?.destructive\n\t\t\t? (isDark ? \"#ff453a\" : \"#ff3b30\")\n\t\t\t: (isDark ? \"#ffffff\" : \"#000000\");\n\t}\n\treturn {\n\t\t...action,\n\t\timageColor: processColor(imageColor),\n\t\ttitleColor: processColor(action.titleColor),\n\t\tsubactions: action.subactions?.map((subAction) => processAction(subAction, isDark)),\n\t};\n}\n\nconst defaultHitslop = { top: 0, left: 0, bottom: 0, right: 0 };\n\nconst MenuView = forwardRef<MenuComponentRef, MenuComponentProps>(\n\t({ actions, hitSlop = defaultHitslop, ...props }, ref) => {\n\t\tconst colorScheme = useColorScheme();\n\t\tconst isDark = props.themeVariant === \"dark\" ||\n\t\t\t(props.themeVariant !== \"light\" && colorScheme === \"dark\");\n\t\tconst processedActions = actions.map<ProcessedMenuAction>((action) =>\n\t\t\tprocessAction(action, isDark),\n\t\t);\n\t\tconst hash = useMemo(() => {\n\t\t\treturn objectHash(processedActions);\n\t\t}, [processedActions]);\n\n\t\treturn (\n\t\t\t<UIMenuView\n\t\t\t\t{...props}\n\t\t\t\thitSlop={hitSlop}\n\t\t\t\tactions={processedActions}\n\t\t\t\tactionsHash={hash}\n\t\t\t\tref={ref}\n\t\t\t/>\n\t\t);\n\t},\n);\n\nexport { MenuView };\nexport type {\n\tMenuComponentProps,\n\tMenuComponentRef,\n\tMenuAction,\n\tNativeActionEvent,\n};\n"],"mappings":";;;;;;AAAA,IAAAA,MAAA,GAAAC,OAAA;AACA,IAAAC,YAAA,GAAAD,OAAA;AAEA,IAAAE,WAAA,GAAAC,sBAAA,CAAAH,OAAA;AAQA,IAAAI,MAAA,GAAAJ,OAAA;AAAqC,IAAAK,WAAA,GAAAL,OAAA;AAAA,SAAAG,uBAAAG,CAAA,WAAAA,CAAA,IAAAA,CAAA,CAAAC,UAAA,GAAAD,CAAA,KAAAE,OAAA,EAAAF,CAAA;AAErC,SAASG,aAAaA,CAACC,MAAkB,EAAEC,MAAe,EAAuB;EAChF,IAAIC,UAAU,GAAGF,MAAM,CAACE,UAAU;EAClC;EACA;EACA,IAAIC,qBAAQ,CAACC,EAAE,KAAK,KAAK,IAAIJ,MAAM,CAACK,KAAK,IAAIH,UAAU,IAAI,IAAI,EAAE;IAChEA,UAAU,GAAGF,MAAM,CAACM,UAAU,EAAEC,WAAW,GACvCN,MAAM,GAAG,SAAS,GAAG,SAAS,GAC9BA,MAAM,GAAG,SAAS,GAAG,SAAU;EACpC;EACA,OAAO;IACN,GAAGD,MAAM;IACTE,UAAU,EAAE,IAAAM,yBAAY,EAACN,UAAU,CAAC;IACpCO,UAAU,EAAE,IAAAD,yBAAY,EAACR,MAAM,CAACS,UAAU,CAAC;IAC3CC,UAAU,EAAEV,MAAM,CAACU,UAAU,EAAEC,GAAG,CAAEC,SAAS,IAAKb,aAAa,CAACa,SAAS,EAAEX,MAAM,CAAC;EACnF,CAAC;AACF;AAEA,MAAMY,cAAc,GAAG;EAAEC,GAAG,EAAE,CAAC;EAAEC,IAAI,EAAE,CAAC;EAAEC,MAAM,EAAE,CAAC;EAAEC,KAAK,EAAE;AAAE,CAAC;AAE/D,MAAMC,QAAQ,GAAAC,OAAA,CAAAD,QAAA,GAAG,IAAAE,iBAAU,EAC1B,CAAC;EAAEC,OAAO;EAAEC,OAAO,GAAGT,cAAc;EAAE,GAAGU;AAAM,CAAC,EAAEC,GAAG,KAAK;EACzD,MAAMC,WAAW,GAAG,IAAAC,2BAAc,EAAC,CAAC;EACpC,MAAMzB,MAAM,GAAGsB,KAAK,CAACI,YAAY,KAAK,MAAM,IAC1CJ,KAAK,CAACI,YAAY,KAAK,OAAO,IAAIF,WAAW,KAAK,MAAO;EAC3D,MAAMG,gBAAgB,GAAGP,OAAO,CAACV,GAAG,CAAuBX,MAAM,IAChED,aAAa,CAACC,MAAM,EAAEC,MAAM,CAC7B,CAAC;EACD,MAAM4B,IAAI,GAAG,IAAAC,cAAO,EAAC,MAAM;IAC1B,OAAO,IAAAC,iBAAU,EAACH,gBAAgB,CAAC;EACpC,CAAC,EAAE,CAACA,gBAAgB,CAAC,CAAC;EAEtB,oBACC,IAAAjC,WAAA,CAAAqC,GAAA,EAACxC,WAAA,CAAAM,OAAU;IAAA,GACNyB,KAAK;IACTD,OAAO,EAAEA,OAAQ;IACjBD,OAAO,EAAEO,gBAAiB;IAC1BK,WAAW,EAAEJ,IAAK;IAClBL,GAAG,EAAEA;EAAI,CACT,CAAC;AAEJ,CACD,CAAC","ignoreList":[]}
+\ No newline at end of file

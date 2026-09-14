@@ -1,5 +1,8 @@
 # 开发指南
 
+已完成并验证的修改默认直接在 `main` 分支提交，不再新建功能分支；用户明确要求时除外。
+提交只包含本次工作，保留其他未提交内容。
+
 [返回 README](../README.md#开发指南)
 
 使用 macOS、Xcode 26.4 及以上和 Node 22.13 及以上的受支持 LTS 版本。
@@ -24,8 +27,27 @@ cd ..
 
 `@react-native-menu/menu@2.0.0` 的 iOS 补丁修复新架构下默认图标颜色被转换为透明色的问题
 （[上游 issue #1034](https://github.com/react-native-menu/menu/issues/1034)）。
-补丁让颜色值 `0` 沿用系统着色，恢复菜单图标及深浅色适配；此版本不支持用 `0` 隐藏图标。
-更新该补丁后需要重新构建 iOS App，仅刷新 JavaScript 不会生效。
+原生补丁让颜色值 `0` 沿用系统着色；此版本不支持用 `0` 隐藏图标。
+2026-09-14 收到 iOS 16.6 的菜单图标缺失反馈，已确认所用 IPA 与
+`main@7ffe338` 的 Actions 产物一致，且包含上述原生补丁，不能归因于漏打补丁。
+当前兼容修复在共享 JS 菜单入口为 iOS 图标显式提供深浅主题颜色，同时覆盖子菜单、
+删除图标与主题切换后的 action hash 更新。保留自定义颜色和 Android 行为；
+源码、CommonJS、ESM 入口及 source map 随同补丁同步。
+`node scripts/check-menu-icons.mjs` 的 18 项颜色传递与事件保持检查通过。
+2026-09-14，用户安装 `CyMusic-ios16-menu-icons-candidate-20260914.ipa` 后，
+确认 iOS 16.6 实机菜单图标恢复。该包只替换生产 JS bundle，原生程序与资源保持一致。
+实测支持显式着色方案有效；旧系统内部具体的着色失败机制仍未直接观测。
+修改原生补丁需要重新构建 iOS App；此次新增逻辑位于 JS，测试包可复用
+已核验的原生程序，并重新生成匹配 Hermes 98 的生产 bundle。
+
+歌词页底部使用独立的四等宽按钮栏，每个按钮至少有 44pt 点击高度；
+字号按钮与延迟按钮均在父容器可用宽度内居中。延迟面板的三项控件按比例分配宽度，
+不再使用会挤占相邻按钮的固定最小宽度。验证时检查窄屏、底部安全区、
+字号调整、延迟加减/重置，以及关闭后重新进入歌词页。
+2026-09-14 已在 iOS 26.5 的 iPhone SE（375×667）复现旧版右侧按钮出界，
+并验证修复后四个按钮、延迟面板及上述操作；iPhone 17 Pro（402×874）的布局和
+底部安全区也已检查。此项布局修复的 iOS 16.6 实机结果仍待用户复测，
+不与前述菜单图标的实机验收混为一项。
 
 `@rntp/player@5.9.2` 的 iOS 补丁还接入了设置中的“精确跳转”。每次 App 创建歌曲时
 保存所选策略，原生重试及代理回退继续使用该策略；标记为直播的条目和静音占位不启用精确准备。
@@ -107,6 +129,7 @@ xcodebuild -workspace ios/CyMusic.xcworkspace \
 
 ```bash
 node scripts/check-rntp-player.mjs
+node scripts/check-menu-icons.mjs
 node scripts/check-rntp-remote-native.mjs
 node scripts/check-rntp-precise-seeking.mjs
 node scripts/check-local-files.mjs

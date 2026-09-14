@@ -208,6 +208,42 @@ destroy(): string
 - Keep `babel-preset-expo` responsible for the compatible Worklets transform;
   adding a duplicate legacy Reanimated plugin is not the Reanimated4 migration.
 
+### iOS menu icon color boundary
+
+**Scope / trigger:** iOS 16.6 reports missing icons in both menu consumers even
+with the original zero-tint native patch present in the verified Release IPA.
+On 2026-09-14 the user confirmed restored menu icons with the JS-only candidate
+IPA. This validates the workaround on the reported device without establishing
+the exact internal UIKit failure mechanism.
+
+**Signatures:** retain `MenuView`/`MenuAction` and native codegen props. The patched
+package's private `processAction(action, isDark)` owns recursive color defaults.
+
+**Contracts:** on iOS, an action with an image and null/omitted `imageColor` gets
+opaque black in light appearance or white in dark appearance. Destructive actions
+use `#ff3b30` / `#ff453a`. An explicit light/dark `themeVariant` takes precedence;
+otherwise use `useColorScheme()`. Compute `actionsHash` after resolving colors.
+
+**Validation / error matrix:** explicit colors, including zero, retain existing
+processing; text-only actions do not acquire images or colors; Android retains
+its original defaults. Unknown/system theme variants follow device appearance,
+and a null appearance resolves to light. Keep IDs, attributes and callbacks intact.
+
+**Good / base / bad:** nested icons update with theme (good); explicit icon color
+is preserved (base); filling colors after hashing leaves stale native colors (bad).
+
+**Tests:** `scripts/check-menu-icons.mjs` executes the source, ESM and CommonJS
+entries at their native-component boundary. Assert opaque defaults, destructive
+colors, nested actions, theme/hash changes, overrides and event forwarding. Keep
+generated JS/maps synchronized. Test actual iOS 16.6 menus in both themes before
+claiming the reported rendering failure is resolved; a newer simulator is separate.
+The recorded user acceptance confirms icon restoration; individual theme,
+submenu and disabled-action cases were not separately reported.
+
+**Wrong vs correct:** do not infer missing native patches from identical symptoms;
+compare the reported IPA with its Actions artifact and inspect the native code.
+Do not add repeated color fixes to individual screens; use the shared package entry.
+
 ### RNTP v5 playback and queue ownership
 
 - Pin `@rntp/player@5.9.2` and `RNTPPlayer`; remove active RNTP4 imports and
@@ -310,6 +346,13 @@ destroy(): string
   a documented cost of the user's opt-in, not a reason to change quality or lyrics.
 
 ### New Architecture list and image consumers
+
+- The lyrics screen owns its four-column toolbar: equal flexible touch targets,
+  `minWidth: 0`, at least 44pt hit height, and the parent safe-area padding. The
+  delay panel uses three shrinkable controls with a wider value/reset control;
+  do not restore the fixed 130pt minimum inside an equal-width wrapper. Keep the
+  ordinary player footer independent. Verify actual narrow-screen layout, the
+  expanded panel, font/delay buttons, and repeated player/lyrics transitions.
 
 - FlashList2.0.2 auxiliary slots such as `ListEmptyComponent` and
   `ListFooterComponent` require an accepted element/plain function. A raw

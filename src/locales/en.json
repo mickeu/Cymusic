@@ -150,6 +150,12 @@
 		"minutes": "Minutes",
 		"custom": "Custom",
 		"lyricDelay": "Lyric Delay",
+		"backToPlayer": "Back to Player",
+		"decreaseLyricFontSize": "Decrease Lyric Font Size",
+		"increaseLyricFontSize": "Increase Lyric Font Size",
+		"decreaseLyricDelay": "Decrease Lyric Delay by 0.5 Seconds",
+		"increaseLyricDelay": "Increase Lyric Delay by 0.5 Seconds",
+		"resetLyricDelay": "Reset Lyric Delay",
 		"selectArtist": "Select Artist",
 		"error": {
 			"title": "Error",
